@@ -1223,7 +1223,7 @@ async function loadTeamPlayersFromSharePoint() {
   // Load staff
   if (staffRosterList) {
     try {
-      const staffRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${staffRosterList.id}/items?$expand=fields($select=Title,Role,Email,Phone)&$top=999`, { headers: h })).json();
+      const staffRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${staffRosterList.id}/items?$expand=fields($select=Title,Role,Email,Phone)&$top=200`, { headers: h })).json();
       staffList = (staffRes.value || []).map(item => ({
         name: item.fields.Title || '',
         role: item.fields.Role || '',
@@ -1236,7 +1236,7 @@ async function loadTeamPlayersFromSharePoint() {
 
   // Load all roster players (id → full detail)
   const rosterFields = 'Title,LastName,Postion,SecondaryPosition,Email,Phone,Gender,BirthDate,CurrentLocation,Country,CurrentTeam,PastExperience,CanTravel,PassportCountry,PassportExpiry,VisaStatus,Height,DominantFoot,IDCampLocation,HeadshotURL';
-  let rosterUrl = `https://graph.microsoft.com/v1.0/sites/${sId}/lists/${rosterList.id}/items?$expand=fields($select=${rosterFields})&$top=999`;
+  let rosterUrl = `https://graph.microsoft.com/v1.0/sites/${sId}/lists/${rosterList.id}/items?$expand=fields($select=${rosterFields})&$top=200`;
   const playerMap = {};
   while (rosterUrl) {
     const res = await (await fetch(rosterUrl, { headers: h })).json();
@@ -1273,7 +1273,7 @@ async function loadTeamPlayersFromSharePoint() {
 
   // Load all team sheets
   const tsFields = 'Title,Tournament,Line,Players';
-  const tsRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${tsList.id}/items?$expand=fields($select=${tsFields})&$top=999`, { headers: h })).json();
+  const tsRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${tsList.id}/items?$expand=fields($select=${tsFields})&$top=200`, { headers: h })).json();
 
   teamPlayers = {};
   (tsRes.value || []).forEach(item => {
@@ -2657,7 +2657,7 @@ async function syncRosterFromSharePoint() {
 
     // Load all items
     const fields = 'Title,LastName,Email,Phone,CurrentLocation,Country,Postion,SecondaryPosition,CanTravel,PassportCountry,VisaStatus,PassportExpiry,CurrentTeam,PastExperience,Height,DominantFoot';
-    let url = `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterList.id}/items?$expand=fields($select=${fields})&$top=999`;
+    let url = `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterList.id}/items?$expand=fields($select=${fields})&$top=200`;
     let rows = [];
     while (url) {
       const res = await (await fetch(url, { headers: h })).json();
