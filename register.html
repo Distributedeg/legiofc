@@ -416,7 +416,17 @@
 // ══════════════════════════════════════════════════════════
 //  CONFIG — paste your Power Automate HTTP trigger URL here
 // ══════════════════════════════════════════════════════════
+// FLOW_URL is intentionally kept here as dead code: the form
+// no longer calls Power Automate, but the URL stays so a
+// one-line revert is possible if the v2 path breaks.
 const FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/53d01453efad4d20896d2ef0e9aadeea/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oejSafoDVKC85ghVFojG3vBJ-u7jrTELnGXyK9xUwgw';
+
+// v2 API endpoint. Public, no auth. Accepts the rich player
+// payload below and writes directly to the production MySQL
+// database (table `players` + `player_videos` + `player_club_
+// affiliations` for the Legio membership row + `player_documents`
+// for the passport photo).
+const V2_REGISTER_URL = 'https://dstbtd-soccer-api.azurewebsites.net/api/v2/register';
 
 let selectedTournament = '';
 function setTournamentFromSelect(el) { selectedTournament = el.value; }
@@ -490,51 +500,68 @@ async function submitForm() {
   document.getElementById('submit-text').textContent = 'Submitting…';
 
   const payload = {
-    FullName:             `${firstName} ${lastName}`,
-    LastName:             lastName,
-    BirthDate:            document.getElementById('birthDate').value.trim(),
-    Gender:               document.getElementById('gender').value,
-    Email:                document.getElementById('email').value.trim(),
-    Phone:                document.getElementById('phone').value.trim(),
-    CurrentLocation:      document.getElementById('currentLocation').value.trim(),
-    Country:              document.getElementById('country').value.trim(),
-    IDCampLocation:       document.getElementById('idCampLocation').value.trim(),
-    PassportCountry:      document.getElementById('passportCountry').value.trim(),
-    PassportExpiry:       document.getElementById('passportExpiry').value.trim(),
-    VisaStatus:           document.getElementById('visaStatus').value,
-    CanTravel:            document.querySelector('input[name="canTravel"]:checked').value,
-    TravelRestrictions:   document.getElementById('travelRestrictions').value.trim(),
-    CurrentTeam:          document.getElementById('currentTeam').value.trim(),
-    PrimaryPosition:      document.getElementById('primaryPosition').value,
-    SecondaryPosition:    document.getElementById('secondaryPosition').value,
-    Height:               document.getElementById('playerHeight').value,
-    DominantFoot:         document.getElementById('dominantFoot').value,
-    PastExperience:       document.getElementById('pastExperience').value.trim(),
-    HighlightReel1:       document.getElementById('highlight1').value.trim(),
-    HighlightReel2:       document.getElementById('highlight2').value.trim(),
-    HighlightReel3:       document.getElementById('highlight3').value.trim(),
-    FullGameLink:         document.getElementById('fullGame').value.trim(),
-    HeadshotPhoto:        headshotB64,
-    HeadshotExt:          headshotExt,
-    PlayerPhoto:          passportB64,
-    PlayerExt:            playerExt,
-    Tournament:           selectedTournament,
-    SubmittedDate:        new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})).toISOString(),
+    type:                          'player',
+    legalFirstName:                firstName,
+    legalLastName:                 lastName,
+    dob:                           document.getElementById('birthDate').value.trim(),
+    gender:                        document.getElementById('gender').value,
+    email:                         document.getElementById('email').value.trim(),
+    phone:                         document.getElementById('phone').value.trim(),
+    currentLocation:               document.getElementById('currentLocation').value.trim(),
+    countryOfResidence:            document.getElementById('country').value.trim(),
+    preferredTournamentLocation:   document.getElementById('idCampLocation').value.trim(),
+    passportIssuingCountry:        document.getElementById('passportCountry').value.trim(),
+    passportExpiry:                document.getElementById('passportExpiry').value.trim(),
+    visaStatus:                    document.getElementById('visaStatus').value,
+    canTravel:                     document.querySelector('input[name="canTravel"]:checked').value,
+    travelRestrictions:            document.getElementById('travelRestrictions').value.trim(),
+    currentTeam:                   document.getElementById('currentTeam').value.trim(),
+    primaryPosition:               document.getElementById('primaryPosition').value,
+    secondaryPosition:             document.getElementById('secondaryPosition').value,
+    heightCm:                      document.getElementById('playerHeight').value,
+    dominantFoot:                  document.getElementById('dominantFoot').value,
+    pastExperience:                document.getElementById('pastExperience').value.trim(),
+    highlightReels: [
+      document.getElementById('highlight1').value.trim(),
+      document.getElementById('highlight2').value.trim(),
+      document.getElementById('highlight3').value.trim(),
+    ].filter(Boolean),
+    fullGameLink:                  document.getElementById('fullGame').value.trim(),
+    headshotBase64:                headshotB64,
+    headshotExt:                   headshotExt,
+    passportPhotoBase64:           passportB64,
+    passportPhotoExt:              playerExt,
+    passportPhotoFileName:         playerFile.name,
+    tournament:                    selectedTournament,
   };
 
   try {
-    const res = await fetch(FLOW_URL, {
+    const res = await fetch(V2_REGISTER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if (res.ok || res.status === 202) {
+    if (res.status === 201) {
       document.getElementById('form-wrap').style.display = 'none';
       document.getElementById('success-screen').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (res.status === 409) {
+      // Email already registered. Surface a specific message so
+      // the user knows to contact ops rather than just retrying.
+      showError('This email is already registered. Please contact operations@legiofc.com to update your profile.');
+      btn.disabled = false;
+      document.getElementById('submit-text').textContent = 'Submit Player Profile';
+      progress.style.display = 'none';
     } else {
-      throw new Error(`Server error: ${res.status}`);
+      // Try to surface the API's error message; fall back to a
+      // generic one if the response isn't JSON.
+      let detail = '';
+      try {
+        const body = await res.json();
+        detail = body && body.error ? ' (' + body.error + ')' : '';
+      } catch (_) { /* not JSON */ }
+      throw new Error('Server error: ' + res.status + detail);
     }
   } catch (e) {
     showError('Submission failed. Please try again or contact operations@legiofc.com');
