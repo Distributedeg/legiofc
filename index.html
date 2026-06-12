@@ -129,9 +129,11 @@
 </head>
 <body>
 
-    <!-- Staff login — top right -->
+    <!-- Staff login — top right. Now points to the DSTBTD Clubhouse
+         (v2 platform) at dstbtd.legiofc.com instead of the legacy
+         v1 roster page. -->
     <div class="staff-nav" style="display:flex;gap:10px">
-        <a href="roster.html" class="staff-nav-link">Staff Login</a>
+        <a href="https://dstbtd.legiofc.com/admin/" class="staff-nav-link">Staff Login</a>
     </div>
 
     <div class="ribbon-bg">
@@ -151,6 +153,35 @@
         <div class="logo"><img src="logo.png" alt="Legio Football Club Crest"></div>
         <p class="motto-english">We Gather The Best Against The World</p>
         <p class="founded">MMXXV</p>
+
+        <!-- DSTBTD Clubhouse CTA -- entry point to the player platform
+             at dstbtd.legiofc.com. Sits at the top of the hero so it's
+             the first action a visitor sees. Styled to match the Legio
+             gold-on-navy language but with a subtle patina-green wash
+             on hover, signaling it's a new product surface. -->
+        <div style="display:flex;justify-content:center;margin:0 0 56px;animation:fadeIn 1s ease-out 0.5s backwards;">
+            <a href="https://dstbtd.legiofc.com/register-player/"
+               class="clubhouse-cta"
+               style="display:inline-flex;align-items:center;gap:14px;padding:18px 44px;background:transparent;border:1.5px solid var(--gold);color:var(--gold);text-decoration:none;font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:4px;text-transform:uppercase;position:relative;overflow:hidden;transition:all 0.35s ease;">
+                <span style="display:inline-block;width:6px;height:6px;background:var(--gold);border-radius:50%;"></span>
+                Join the Clubhouse
+                <span style="font-family:'Inter',sans-serif;font-size:16px;font-weight:300;">→</span>
+            </a>
+        </div>
+        <style>
+            .clubhouse-cta:hover{
+                background:rgba(74,126,110,0.15);
+                border-color:#5FA08E;
+                color:#F2F1ED;
+                transform:translateY(-1px);
+            }
+            .clubhouse-cta:hover span:first-child{
+                background:#5FA08E;
+            }
+            @media (max-width:600px){
+                .clubhouse-cta{padding:14px 28px;font-size:11px;letter-spacing:3px;}
+            }
+        </style>
 
         <!-- TST ANNOUNCEMENT -->
         <div class="tst-announcement" style="margin-bottom:50px;">
